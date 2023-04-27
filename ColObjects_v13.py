@@ -1,7 +1,7 @@
-module_name = 'ColObjects_v11.py'
+module_name = 'ColObjects_v13.py'
 
 import math
-import utime
+import time
 
 class ColError(Exception):
     def __init__(self, message):
@@ -144,7 +144,7 @@ class DriveTrain(ColObj):
         self.right_side.fwd(speed)
         if millimetres > 0:
             ms = self.convert_millimetres_to_milliseconds(millimetres, speed)
-            utime.sleep_ms(ms)
+            time.sleep_ms(ms)
             self.stop()
             return ms
         return 0
@@ -153,7 +153,7 @@ class DriveTrain(ColObj):
         self.right_side.rev(speed)
         if millimetres > 0:
             ms = self.convert_millimetres_to_milliseconds(millimetres, speed)
-            utime.sleep_ms(ms)
+            time.sleep_ms(ms)
             self.stop()
             return ms
         return 0
@@ -162,7 +162,7 @@ class DriveTrain(ColObj):
         self.right_side.fwd(speed)
         if degrees > 0:
             ms = self.convert_degrees_to_milliseconds(degrees, speed)
-            utime.sleep_ms(ms)
+            time.sleep_ms(ms)
             self.stop()
             return ms
         return 0
@@ -171,7 +171,7 @@ class DriveTrain(ColObj):
         self.right_side.rev(speed)
         if degrees > 0:
             ms = self.convert_degrees_to_milliseconds(degrees, speed)
-            utime.sleep_ms(ms)
+            time.sleep_ms(ms)
             self.stop()
             return ms
         return 0
@@ -221,7 +221,7 @@ class DriveTrainPlus(DriveTrainWithHeadlights):
         self.rear_right_ir = rear_right_ir
     def drive_for(self, throttle_value, steering_value, milliseconds):
         self.drive(throttle_value, steering_value)
-        utime.sleep_ms(milliseconds)
+        time.sleep_ms(milliseconds)
         self.stop()
     def drive_while(self, throttle_value, steering_value, obj_list):
         self.drive(throttle_value, steering_value)
@@ -235,7 +235,7 @@ class DriveTrainPlus(DriveTrainWithHeadlights):
                 current = obj.get()
                 if current != state:
                     all_ok = False
-            utime.sleep_ms(loop_duration)
+            time.sleep_ms(loop_duration)
             loop_count += 1
             current = obj.get()
         self.stop()
@@ -360,14 +360,12 @@ class RGBLED(ColObj):
         self.red_led.close()
         self.green_led.close()
         self.blue_led.close()
-        
-
 
 if __name__ == "__main__":
     print (module_name)
-    d1 = PIO('Fred',1)
-    d2 = PIO('Bill',1)
-    d3 = PIO('George',0)
-    print (PIO.str_allocated())
-    PIO.deallocate(4)
-    print (PIO.str_allocated())
+    #d1 = PIO('Fred',1)
+    #d2 = PIO('Bill',1)
+    #d3 = PIO('George',0)
+    #print (PIO.str_allocated())
+    #PIO.deallocate(4)
+    #print (PIO.str_allocated())
