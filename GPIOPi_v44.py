@@ -1,10 +1,11 @@
-module_name = 'GPIOPi_v42.py'
-module_create_date = '202304280945'
+module_name = 'GPIOPi_v44.py'
+module_create_date = '202304301308'
 
 import ColObjects_v13 as ColObjects
 import time
-import pigpio
-gpio = pigpio.pi()
+def sleep_us(microseconds):
+    time.sleep(float(microseconds)/1000000.0)
+import gpiozero
 
 #GPIO class reference:
 #   GPIO
@@ -102,19 +103,19 @@ class Reserved(GPIO):
 class DigitalOutput(GPIO):
     def __init__(self, name, type_code, pin_no):
         super().__init__(name, type_code, pin_no)
-        gpio.set_mode(pin_no, pigpio.OUTPUT)
+        self.instance = gpiozero.OutputDevice(pin_no)
     def set(self, new_state):
         if new_state == 'ON':
-            gpio.write(self.pin_no, 1)
+            self.instance.on()
             return True
         elif new_state == 'OFF':
-            gpio.write(self.pin_no, 0)
+            self.instance.off()
             return True
         return False
 
 class StepPattern(ColObjects.ColObj):
     def __init__(self, name):
-        self.name = name
+        super().__init__(name)
 
 class StepPatternStandard(StepPattern):
     def __init__(self, tiny_us=5.0, small_us=10.0, large_us=300.0):
@@ -133,7 +134,43 @@ class StepPatternStandard(StepPattern):
              ['PAUSE', small_us], ['PIN1','ON'],  ['PIN2','OFF'], ['PIN3','OFF'], ['PIN4','ON'],
              ['PAUSE', small_us]]
 
-class L298NStepper(ColObjects.Motor):
+class StepPatternShort(ColObjects.ColObj):
+    def __init__(self):
+        super().__init__('Short Step Pattern')
+        self.pattern = [['PIN1','ON'],['PIN4','OFF'],['PIN3','ON'],['PIN1','OFF'],['PIN2','ON'],['PIN3','OFF'],['PIN4','ON'],['PIN2','OFF']]
+
+class L298NStepperShort(ColObjects.Motor):
+    def __init__(self, name, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
+        super().__init__(name)
+        self.pin_1 = DigitalOutput(pin_no=pin_1_no, type_code='MOTOR', name=self.name+'_'+str(pin_1_no)) 
+        self.pin_2 = DigitalOutput(pin_no=pin_2_no, type_code='MOTOR', name=self.name+'_'+str(pin_2_no)) 
+        self.pin_3 = DigitalOutput(pin_no=pin_3_no, type_code='MOTOR', name=self.name+'_'+str(pin_3_no)) 
+        self.pin_4 = DigitalOutput(pin_no=pin_4_no, type_code='MOTOR', name=self.name+'_'+str(pin_4_no))
+        self.pin_list = {'PIN1':self.pin_1,'PIN2':self.pin_2,'PIN3':self.pin_3,'PIN4':self.pin_4}
+        self.pins = [self.pin_1,self.pin_2,self.pin_3,self.pin_4]
+        self.pattern_object = StepPatternShort()
+        self.pattern = self.pattern_object.pattern
+        self.step_count = len(self.pattern)
+    def step_on(self, direction, pause_microseconds=100):
+        for i in range(self.step_count):
+            if direction == 'ANTI':
+                this_step = self.pattern[i]
+            else:
+                this_step = self.pattern[(self.step_count-1)-i]
+            what = this_step[0]
+            how = this_step[1]
+            pin = self.pin_list[what]
+            pin.set(how)
+            sleep_us(pause_microseconds)
+    def float(self):
+        for pin in self.pins:
+            pin.set('OFF')
+    def close(self):
+        self.float()
+        super().close()
+        
+
+class L298NStepperStandard(ColObjects.Motor):
     def __init__(self, name, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
         self.name = name
         self.pin_1 = DigitalOutput(pin_no=pin_1_no, type_code='MOTOR', name=self.name+'_'+str(pin_1_no)) 
@@ -165,7 +202,21 @@ class L298NStepper(ColObjects.Motor):
                 pin.set(how)
                 time.sleep(tiny_pause)
         time.sleep(large_pause)
-                    
+
+class L298NDCMotor(ColObjects.Motor):
+    def __init__(self, name, fwd_pin_no, rev_pin_no):
+        self.name = name
+        self.instance = gpiozero.Motor(fwd_pin_no, rev_pin_no)
+    def clk(self, speed=100):
+        self.instance.forward(speed/100.0)
+    def anti(self, speed=100):
+        self.instance.backward(speed/100.0)
+    def stop(self):
+        self.instance.stop()
+    def close(self):
+        self.instance.close()
+        super().close()
+
 
 if __name__ == "__main__":
     print (module_name)
