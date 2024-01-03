@@ -1,7 +1,12 @@
 module_name = 'AX12_Servo_V01.py'
 module_created_at = '14/Nov/2023'
 
-import ColObjects_Pi_V15 as ColObjects
+from importlib.machinery import SourceFileLoader
+colin_data = SourceFileLoader('Colin', '/home/pi/ColinThisPi/ColinData.py').load_module()
+my_data = colin_data.ColinData()
+version = my_data.params['ColObjects']
+ColObjects = SourceFileLoader('Colin', '/home/pi/ColinPiClasses/' + version + '.py').load_module()
+
 from pyax12.connection import Connection
 import time
 
@@ -10,6 +15,7 @@ class AX12_Servo(ColObjects.Servo):
         super().__init__(name, 'Dynamixel AX12 Servo')
         self.connection = connection
         self.dynamixel_id = dynamixel_id
+        #print (self.dynamixel_id)
         self.min_angle_value = connection.get_cw_angle_limit(self.dynamixel_id) # set in firmware
         self.max_angle_value = connection.get_ccw_angle_limit(self.dynamixel_id)
         self.a_factor = (self.min_angle_value + self.max_angle_value) / 2.0
@@ -44,22 +50,14 @@ class AX12_Servo(ColObjects.Servo):
 
 if __name__ == "__main__":
     print (module_name,'was created at',module_created_at)
-    if True:
-        conn = Connection(port='/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0', baudrate=1000000)
-        test = AX12_Servo('test', conn, 16)
+    ax12_list = my_data.params['AX12_LIST']
+    if len(ax12_list) > 0:
+        ax12_path = my_data.params['AX12_PATH']
+        ax12_speed = my_data.params['AX12_SPEED']
+        ax12_connection = Connection(port=ax12_path, baudrate=ax12_speed)
+        test = AX12_Servo('test', ax12_connection, ax12_list[0])
         time.sleep(0.1)
         test.close()
-        conn.close()
-    if False:
-        conn = Connection(port='/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2:1.0-port0', baudrate=1000000)
-        test = AX12_Servo('test', conn, 16)
-        time.sleep(1)
-        print (test.min_angle_value, test.max_angle_value)
-        print (test.a_factor, test.b_factor)
-        print (test.move_to_and_wait(-100))
-        print (test.move_to_and_wait(-10))
-        print (test.move_to_and_wait(64.3))
-        print (test.move_to_and_wait(100))
-        print (test.move_to_and_wait(-100))
-        test.close()
-        conn.close()
+        ax12_connection.close()
+    else:
+        print ('no AX12s')

@@ -1,7 +1,8 @@
 module_name = 'GPIO_Pi_v46.py'
 module_created_at = '202305091139'
 
-import ColObjects_v14 as ColObjects
+from importlib.machinery import SourceFileLoader
+ColObjects = SourceFileLoader('ColObjects','/home/pi/ColinPiClasses/ColObjects_Pi_V15.py').load_module()
 import time
 def sleep_us(microseconds):
     time.sleep(float(microseconds)/1000000.0)
