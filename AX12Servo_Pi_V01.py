@@ -10,7 +10,7 @@ ColObjects = SourceFileLoader('Colin', '/home/pi/ColinPiClasses/' + version + '.
 from pyax12.connection import Connection
 import time
 
-class AX12_Servo(ColObjects.Servo):
+class AX12Servo(ColObjects.Servo):
     def __init__(self, name, connection, dynamixel_id):
         super().__init__(name, 'Dynamixel AX12 Servo')
         self.connection = connection
