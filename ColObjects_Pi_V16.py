@@ -1,5 +1,5 @@
-module_name = 'ColObjects_v14.py'
-module_created_at = '202305011105'
+module_name = 'ColObjects_Pi_V16.py'
+module_created_at = '202402011429'
 
 import math
 import time
@@ -36,6 +36,31 @@ class ColObj():
     
     def close(self):
         ColObj.allocated[self.name] = ColObj.free_code
+
+class ZombieFinder(ColObj):
+    def __init__(self, name, description=''):
+        super().__init__(name, description)
+    def find_zombies(self, image_in, coordinates_out):
+        # image_in is an RGB image, typically 640x480
+        # coordinates_out is an array with zero or more x,y values
+        #   specifying the center points of zombies in the image
+        pass
+
+class Servo(ColObj):
+    def __init__(self, name, description='Generic Servo'):
+        super().__init__(name, description)
+    def move_to(self, in_pos, speed):
+        pos = int(in_pos)
+        if pos < -100:
+            raise ColError('pos must be between -100 and +100')
+        if pos > 100:
+            raise ColError('pos must be between -100 and +100')
+        if speed < 1:
+            raise ColError('speed must be between 1 and 100')
+        if speed > 100:
+            raise ColError('speed must be between 1 and 100')
+    def close(self):
+        super().close()
 
 class Switch(ColObj):
     def __init__(self, name):
@@ -278,103 +303,5 @@ class DriveCalc():
             right = self.constrain (throttle - steering, self.min_throttle, self.max_throttle)
             return int(left), int(right)
 
-class PIO(ColObj):
-    
-    allocated = {}
-    free_code = '--FREE--'
-    pio_no = 0
-    for i in range(2):  #  There are two blocks. Block 0 is conventionally used for remote control
-                        #                        Block 1 is conventionally used for neopixels
-                        #  This avoids running out of code space as code gets re-used
-        allocated[i] = {}
-        for j in range(4):   #  each block has 4 PIOs
-            allocated[i][j] = {'PIO':pio_no,'NAME':free_code}
-            pio_no += 1
-    
-    def str_allocated():
-        out_string = ('{:3}'.format('PIO') +
-                      '  {:18}'.format('NAME') + '\n')
-        for i in range(2):
-            for j in range(4):
-                out_string += ('{:3}'.format(PIO.allocated[i][j]['PIO'])  +
-                               '  {:18}'.format(PIO.allocated[i][j]['NAME']) + '\n')
-        return out_string
-
-    def allocate(name, block):
-        for j in range(4):
-            if PIO.allocated[block][j]['NAME'] == PIO.free_code:
-                PIO.allocated[block][j]['NAME'] = name
-                return PIO.allocated[block][j]['PIO']
-        return None        
-        
-    def deallocate(pio_no):
-        for i in range(2):
-            for j in range(4):
-                if PIO.allocated[i][j]['PIO'] == pio_no:
-                    PIO.allocated[i][j]['NAME'] = PIO.free_code
-                    return True
-        return False
-
-    def __init__(self, name, block):
-        super().__init__(name)
-        self.pio_no = PIO.allocate(name, block)
-        if self.pio_no is None:
-            print (PIO.str_allocated())
-            raise ColError('**** Could not get PIO')
-
-class RGBLED(ColObj):
-    def __init__(self, name, red_led, green_led, blue_led):
-        response = super().__init__(name)
-        self.red_led = red_led
-        self.green_led = green_led
-        self.blue_led = blue_led
-        
-    def on(self):
-        self.red_led.on()
-        self.green_led.on()
-        self.blue_led.on()
-
-    def red(self):
-        self.red_led.on()
-        self.green_led.off()
-        self.blue_led.off()
-
-    def green(self):
-        self.red_led.off()
-        self.green_led.on()
-        self.red_led.off()
-
-    def blue(self):
-        self.red_led.off()
-        self.green_led.off()
-        self.blue_led.on()
-
-    def purple(self):
-        self.red_led.on()
-        self.green_led.off()
-        self.blue_led.on()
-
-    def orange(self):
-        self.red_led.on()
-        self.green_led.on()
-        self.blue_led.off()
-
-    def off(self):
-        self.red_led.off()
-        self.green_led.off()
-        self.blue_led.off()
-        
-    def close(self):
-        self.off()
-        self.red_led.close()
-        self.green_led.close()
-        self.blue_led.close()
-
 if __name__ == "__main__":
     print (module_name,'was created at',module_created_at)
-    #d1 = PIO('Fred',1)
-    #d2 = PIO('Bill',1)
-    #d3 = PIO('George',0)
-    #print (PIO.str_allocated())
-    #PIO.deallocate(4)
-    #print (PIO.str_allocated())
