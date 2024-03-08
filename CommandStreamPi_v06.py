@@ -1,4 +1,5 @@
-module_name = 'CommandStreamPi_v03.py'
+module_name = 'CommandStreamPi_v05.py'
+last_modified = '30/Jan/2024'
 if __name__ == "__main__":
     print (module_name, 'starting')
 
@@ -49,6 +50,7 @@ class Pico():
         self.handshake = handshake
         self.port_name = 'Unknown'
         self.name = 'Unknown'
+        self.description = 'Unknown'
         self.port = None
         self.valid = False
 
@@ -76,15 +78,22 @@ class Pico():
             result = self.get(2)
             if result:
                 print ('Received:', result)
-                pico_name = result[4:]
+                if len(result) < 9:
+                    print ('Bad name: ', result)
+                    self.port.close
+                    continue
+                pico_name = result[8:]
                 if not pico_name:
                     print ('**** WHOU get failed')
                     self.port.close
                     continue
+                if pico_name not in self.possible_picos:
+                    print ('**** Pico', pico_name, 'not in list')
+                    continue
                 print ('Pico name:', pico_name, self.possible_picos[pico_name])
                 if pico_name == pico_id:
-                    self.name = self.possible_picos[pico_id]
-                    self.id = pico_id
+                    self.description = self.possible_picos[pico_id]
+                    self.name = pico_id
                     self.port_name = possible_port
                     self.valid = True
                     break
@@ -109,7 +118,7 @@ class Pico():
             return False
         return True
 
-    def get(self, timeout=0.02):
+    def get(self, timeout=0.02):  #  Don't use directly. Use do_command
         inputs, outputs, errors = select.select([self.port],[],[],timeout)
         if len(inputs) > 0:
             read_text = self.port.readline()
@@ -130,7 +139,7 @@ class Pico():
                 flushed += 1
         return flushed
 
-    def do_command(self,command):
+    def do_command(self, serial_no, command):
         #print ('Executing',command)
         if self.handshake is not None:
             result = self.handshake.wait()
@@ -138,15 +147,25 @@ class Pico():
             result = True
         if result:
             #print ('handshake OK')
-            success = self.send(command)
+            success = self.send(serial_no + command)
             if success:
                 #print ('send OK')
                 reply = self.get()
-                return reply
+                if not reply:
+                    return serial_no, 'BADG', None
+                if len(reply) < 8:
+                    return serial_no, 'BADL', reply
+                serial_no = reply[0:4]
+                feedback = reply[4:8]
+                if len(reply) > 8:
+                    data = reply[8:]
+                else:
+                    data = None
+                return serial_no, feedback, data
             else:
-                return '**** send failed'
+                return serial_no, 'BADS', reply
         else:
-            return '**** handshake wait failed'
+            return serial_no, 'BADH', None
 
     def close(self):
         if self.port:
