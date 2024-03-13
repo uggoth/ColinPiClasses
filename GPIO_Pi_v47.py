@@ -7,6 +7,7 @@ import time
 def sleep_us(microseconds):
     time.sleep(float(microseconds)/1000000.0)
 import pigpio
+import gpiozero
 
 #GPIO class reference:
 #   GPIO
@@ -102,7 +103,7 @@ class Reserved(GPIO):
         super().__init__(name, type_code, pin_no)
 
 class DigitalOutput(GPIO):
-    def __init__(self, name, type_code, pin_no):
+    def __init__(self, name, gpio, type_code, pin_no):
         super().__init__(name, type_code, pin_no)
         self.instance = gpiozero.OutputDevice(pin_no)
     def set(self, new_state):
@@ -115,8 +116,8 @@ class DigitalOutput(GPIO):
         return False
 
 class Trigger(DigitalOutput):
-    def __init__(self, name, pin_no):
-        super().__init__(name, 'US_TRIGGER', pin_no)
+    def __init__(self, name, gpio, pin_no):
+        super().__init__(name, gpio, 'US_TRIGGER', pin_no)
 
 class StepPattern(ColObjects.ColObj):
     def __init__(self, name):
@@ -309,6 +310,12 @@ class Ranger:
       else:
          return None
 
+   def read_mms(self):
+       sub_result = self.read()
+       if sub_result is None:
+           return None
+       return int((sub_result / 200000.0) * 34030.0)
+
    def cancel(self):
       """
       Cancels the ranger and returns the gpios to their
@@ -324,13 +331,16 @@ class Ranger:
 class HCSR04(ColObjects.ColObj):
     def __init__(self, name, gpio, trigger_pin_no, echo_pin_no):
         super().__init__(name)
-        self.trigger = Trigger(name+'_T', gpio, trigger_pin_no)
-        self.echo = Switch(name+'_E', gpio, echo_pin_no)
-        self.instance = Ranger(gpio, self.trigger, self.echo)
+        self.trigger_pin_no = trigger_pin_no
+        GPIO.allocate(trigger_pin_no, self)
+        self.echo_pin_no = echo_pin_no
+        GPIO.allocate(echo_pin_no, self)
+        self.instance = Ranger(gpio, self.trigger_pin_no, self.echo_pin_no)
     def close(self):
         self.instance.cancel()
-        self.trigger.close()
-        self.echo.close()
+        GPIO.deallocate(self.trigger_pin_no)
+        GPIO.deallocate(self.echo_pin_no)
+        super().close()
 
 if __name__ == "__main__":
     print (module_name,'was created at',module_created_at)
