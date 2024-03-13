@@ -1,14 +1,23 @@
-module_name = 'CommandStreamPi_v05.py'
+module_name = 'CommandStreamPi_v06.py'
 last_modified = '30/Jan/2024'
 if __name__ == "__main__":
     print (module_name, 'starting')
 
+from importlib.machinery import SourceFileLoader
+data_module = SourceFileLoader('Colin', '/home/pi/ColinThisPi/ColinData.py').load_module()
+data_object = data_module.ColinData()
+data_values = data_object.params
+ColObjectsVersion = data_values['ColObjects']
+col_objects_name = '/home/pi/ColinPiClasses/' + ColObjectsVersion + '.py'
+print (col_objects_name)
+ColObjects = SourceFileLoader('ColObjects', col_objects_name).load_module()
 import pigpio
 import time
 import serial, sys, select
 
-class Handshake():
+class Handshake(ColObjects.ColObj):
     def __init__(self, pin_no, gpio):
+        super().__init__('Pico Handshake')
         self.pin_no = pin_no
         self.gpio = gpio
         self.gpio.set_mode(pin_no, pigpio.INPUT)
@@ -25,10 +34,9 @@ class Handshake():
         print ('handshake not set after',i,'iterations')
         return False
 
-class Pico():
-
+class Pico(ColObjects.ColObj):
+    
     def __init__(self, pico_id, gpio, handshake):
-
         self.possible_picos = {'SHEEP':'Sheep Pico',
                                'TROUGH':'Trough Pico',
                                'HORSE':'Dummy Test Pico',
@@ -96,6 +104,7 @@ class Pico():
                     self.name = pico_id
                     self.port_name = possible_port
                     self.valid = True
+                    super().__init__(pico_name)
                     break
                 else:
                     print ("Unexpectedly got '{}'".format(result))
@@ -170,6 +179,7 @@ class Pico():
     def close(self):
         if self.port:
             self.port.close()
+        super().close()
 
 class TypicalUsage(Pico):
     def __init__(self):

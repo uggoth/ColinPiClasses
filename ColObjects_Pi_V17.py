@@ -9,10 +9,12 @@ class ColError(Exception):
         super().__init__(message)
 
 class ColObj():
-    
+
+    ########## class data    
     allocated = {}
     free_code = 'FREE'
-    
+
+    ######### class methods
     def str_allocated():
         out_string = ('{:18}'.format('NAME') +
                         '{:18}'.format('OBJECT') + '\n')
@@ -23,6 +25,11 @@ class ColObj():
                                 str(obj) + '\n')
         return out_string
     
+    def close_all():
+        for name in ColObj.allocated:
+            ColObj.allocated[name].close()
+
+    ######### instance methods
     def __init__(self, name, description=''):
         self.name = name
         if name in ColObj.allocated:

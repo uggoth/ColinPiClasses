@@ -2,7 +2,13 @@ module_name = 'GPIO_Pi_v47.py'
 module_created_at = '20240313'
 
 from importlib.machinery import SourceFileLoader
-ColObjects = SourceFileLoader('ColObjects','/home/pi/ColinPiClasses/ColObjects_Pi_V15.py').load_module()
+data_module = SourceFileLoader('Colin', '/home/pi/ColinThisPi/ColinData.py').load_module()
+data_object = data_module.ColinData()
+data_values = data_object.params
+col_objects_version = data_values['ColObjects']
+col_objects_name = '/home/pi/ColinPiClasses/' + col_objects_version + '.py'
+print (col_objects_name)
+ColObjects = SourceFileLoader('ColObjects',col_objects_name).load_module()
 import time
 def sleep_us(microseconds):
     time.sleep(float(microseconds)/1000000.0)
