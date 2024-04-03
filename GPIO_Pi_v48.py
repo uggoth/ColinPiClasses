@@ -1,5 +1,5 @@
-module_name = 'GPIO_Pi_v47.py'
-module_created_at = '20240313'
+module_name = 'GPIO_Pi_v48.py'
+module_created_at = '20240326'
 
 from importlib.machinery import SourceFileLoader
 data_module = SourceFileLoader('Colin', '/home/pi/ColinThisPi/ColinData.py').load_module()
@@ -152,12 +152,12 @@ class StepPatternShort(ColObjects.ColObj):
         self.pattern = [['PIN1','ON'],['PIN4','OFF'],['PIN3','ON'],['PIN1','OFF'],['PIN2','ON'],['PIN3','OFF'],['PIN4','ON'],['PIN2','OFF']]
 
 class L298NStepperShort(ColObjects.Motor):
-    def __init__(self, name, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
+    def __init__(self, name, gpio, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
         super().__init__(name)
-        self.pin_1 = DigitalOutput(pin_no=pin_1_no, type_code='MOTOR', name=self.name+'_'+str(pin_1_no)) 
-        self.pin_2 = DigitalOutput(pin_no=pin_2_no, type_code='MOTOR', name=self.name+'_'+str(pin_2_no)) 
-        self.pin_3 = DigitalOutput(pin_no=pin_3_no, type_code='MOTOR', name=self.name+'_'+str(pin_3_no)) 
-        self.pin_4 = DigitalOutput(pin_no=pin_4_no, type_code='MOTOR', name=self.name+'_'+str(pin_4_no))
+        self.pin_1 = DigitalOutput(self.name+'_'+str(pin_1_no), gpio, 'MOTOR', pin_1_no)
+        self.pin_2 = DigitalOutput(self.name+'_'+str(pin_2_no), gpio, 'MOTOR', pin_2_no)
+        self.pin_3 = DigitalOutput(self.name+'_'+str(pin_3_no), gpio, 'MOTOR', pin_3_no) 
+        self.pin_4 = DigitalOutput(self.name+'_'+str(pin_4_no), gpio, 'MOTOR', pin_4_no)
         self.pin_list = {'PIN1':self.pin_1,'PIN2':self.pin_2,'PIN3':self.pin_3,'PIN4':self.pin_4}
         self.pins = [self.pin_1,self.pin_2,self.pin_3,self.pin_4]
         self.pattern_object = StepPatternShort()
@@ -183,13 +183,14 @@ class L298NStepperShort(ColObjects.Motor):
         
 
 class L298NStepperStandard(ColObjects.Motor):
-    def __init__(self, name, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
+    def __init__(self, name, gpio, pin_1_no, pin_2_no, pin_3_no, pin_4_no):
         self.name = name
-        self.pin_1 = DigitalOutput(pin_no=pin_1_no, type_code='MOTOR', name=self.name+'_'+str(pin_1_no)) 
-        self.pin_2 = DigitalOutput(pin_no=pin_2_no, type_code='MOTOR', name=self.name+'_'+str(pin_2_no)) 
-        self.pin_3 = DigitalOutput(pin_no=pin_3_no, type_code='MOTOR', name=self.name+'_'+str(pin_3_no)) 
-        self.pin_4 = DigitalOutput(pin_no=pin_4_no, type_code='MOTOR', name=self.name+'_'+str(pin_4_no))
+        self.pin_1 = DigitalOutput(self.name+'_'+str(pin_1_no), gpio, 'MOTOR', pin_1_no)
+        self.pin_2 = DigitalOutput(self.name+'_'+str(pin_2_no), gpio, 'MOTOR', pin_2_no)
+        self.pin_3 = DigitalOutput(self.name+'_'+str(pin_3_no), gpio, 'MOTOR', pin_3_no) 
+        self.pin_4 = DigitalOutput(self.name+'_'+str(pin_4_no), gpio, 'MOTOR', pin_4_no)
         self.pin_list = {'PIN1':self.pin_1,'PIN2':self.pin_2,'PIN3':self.pin_3,'PIN4':self.pin_4}
+        self.pins = [self.pin_1,self.pin_2,self.pin_3,self.pin_4]
         self.pattern_object = StepPatternStandard()
         self.pattern = self.pattern_object.pattern
     def step_on(self, direction, large_pause='DEFAULT'):
@@ -214,6 +215,12 @@ class L298NStepperStandard(ColObjects.Motor):
                 pin.set(how)
                 time.sleep(tiny_pause)
         time.sleep(large_pause)
+    def float(self):
+        for pin in self.pins:
+            pin.set('OFF')
+    def close(self):
+        self.float()
+        super().close()
 
 class L298NDCMotor(ColObjects.Motor):
     def __init__(self, name, fwd_pin_no, rev_pin_no):
