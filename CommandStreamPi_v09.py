@@ -1,5 +1,5 @@
-module_name = 'CommandStreamPi_v08.py'
-last_modified = '14/Mar/2024'
+module_name = 'CommandStreamPi_v09.py'
+last_modified = '08/Apr/2024'
 if __name__ == "__main__":
     print (module_name, 'starting')
 
@@ -16,8 +16,9 @@ import time
 import serial, sys, select
 
 class Handshake(ColObjects.ColObj):
-    def __init__(self, pin_no, gpio):
-        super().__init__('Pico Handshake')
+    def __init__(self, name, pin_no, gpio):  # <<<<<<<<<<<<<<<<<<<<<changed back as didn't understand logic of fixed name. also gave errors
+        super().__init__(name)               # <<<<<<<<<<<<<<<also gave errors when working with multiple handshakes
+        self.name = name
         self.pin_no = pin_no
         self.gpio = gpio
         self.gpio.set_mode(pin_no, pigpio.INPUT)
@@ -34,8 +35,8 @@ class Handshake(ColObjects.ColObj):
                 return True
             else:
                 time.sleep(0.001)
-        print ('handshake not set after',i,'iterations')
-        return False
+        print (self.name,' handshake not set after',i,'iterations') #<<<<< John added to identify failure
+        return False                                                #<<<<< when using mutiple usb connections
 
 class Pico(ColObjects.ColObj):
     
@@ -49,8 +50,9 @@ class Pico(ColObjects.ColObj):
                                'PICOF':'Pico F',
                                'PICOA':'Pico A',
                                'PICOR':'Pico R (ZyderBot)',
-                               'PS3':'Remote Control ESP32',
-                               'ZOMBI':'Zombie detect ESP32'}
+                               'ZOMBI':'ESP32 on arm',
+                               'LINES':'Line follower',
+                               'PS3':'Remote Control ESP32'}
         self.possible_ports = ['/dev/ttyACM0',
                                '/dev/ttyACM1',
                                '/dev/ttyACM2',
@@ -86,6 +88,8 @@ class Pico(ColObjects.ColObj):
                 print ('**** WHOU send failed')
                 self.port.close
                 continue
+            else:
+                print ('WHOU sent OK')
             time.sleep(0.001)
             result = self.get(2)
             if result:
@@ -111,11 +115,13 @@ class Pico(ColObjects.ColObj):
                     super().__init__(pico_name)
                     break
                 else:
-                    print ("Unexpectedly got '{}'".format(result))
+                    print ("Ignoring '{}'".format(result))
                     self.name = 'UNKNOWN'
                     self.id = 'UNKNOWN'
                     self.port.close
                     continue
+            else:
+                print ('Get failed')
         print ('Pico Init Done')
 
     def __str__(self):
@@ -131,7 +137,7 @@ class Pico(ColObjects.ColObj):
             return False
         return True
 
-    def get(self, timeout=0.02):  #  Don't use directly. Use send_command
+    def get(self, timeout=0.1):  #  Don't use directly. Use send_command   #<<<<< changed from 0.02 John
         inputs, outputs, errors = select.select([self.port],[],[],timeout)
         if len(inputs) > 0:
             read_text = self.port.readline()
@@ -153,13 +159,13 @@ class Pico(ColObjects.ColObj):
         return flushed
 
     def send_command(self, serial_no, command):
-        print ('Executing',command)
+        #print ('Executing',command)
         if self.handshake is not None:
             result = self.handshake.wait()
         else:
             result = True
         if result:
-            print ('handshake OK')
+            #print ('handshake OK')
             success = self.send(serial_no + command)
             if success:
                 #print ('send OK')
@@ -176,7 +182,7 @@ class Pico(ColObjects.ColObj):
                     data = None
                 return serial_no, feedback, data
             else:
-                return serial_no, 'BADS', None
+                return serial_no, 'BADS', reply
         else:
             return serial_no, 'BADH', None
 
