@@ -182,7 +182,7 @@ class Pico(ColObjects.ColObj):
                     data = None
                 return serial_no, feedback, data
             else:
-                return serial_no, 'BADS', reply
+                return serial_no, 'BADS', None
         else:
             return serial_no, 'BADH', None
 
